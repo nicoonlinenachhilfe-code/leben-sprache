@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leben – Spracheingabe</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #080b14;
+      color: #f3f4ff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    main {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      box-sizing: border-box;
+      background: #151b2b;
+      border: 1px solid #35305e;
+      border-radius: 20px;
+      text-align: center;
+    }
+    h1 { color: #c8baff; }
+    p { line-height: 1.6; color: #c9cde0; }
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid #5445a0;
+      color: white;
+      background: #493c91;
+      font-size: 17px;
+    }
+    #status { margin-top: 16px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>✦ Leben</h1>
+    <p>Tippe auf den Button und sprich deine Frage.</p>
+    <button id="start">🎙 Mit Leben sprechen</button>
+    <p id="status">Bereit.</p>
+  </main>
+
+  <script>
+    const status = document.getElementById("status");
+    const button = document.getElementById("start");
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      status.textContent =
+        "Diese Safari-Version unterstützt die Spracherkennung nicht.";
+      button.disabled = true;
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "de-DE";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      button.addEventListener("click", function() {
+        status.textContent = "Ich höre zu …";
+        try {
+          recognition.start();
+        } catch (error) {
+          status.textContent =
+            "Bitte warte kurz und versuche es erneut.";
+        }
+      });
+
+      recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript.trim();
+        status.textContent = "Erkannt: " + text;
+
+        if (text) {
+          const ziel = new URLSearchParams(
+            window.location.search
+          ).get("ziel");
+
+          if (ziel) {
+            try {
+              const url = new URL(ziel);
+              if (url.protocol === "https:") {
+                url.searchParams.set("frage", text);
+                window.location.href = url.toString();
+              }
+            } catch (error) {
+              status.textContent =
+                "Text erkannt, aber das Rücksprungziel ist ungültig.";
+            }
+          }
+        }
+      };
+
+      recognition.onerror = function(event) {
+        status.textContent =
+          "Sprachfehler: " + event.error;
+      };
+
+      recognition.onend = function() {
+        button.disabled = false;
+      };
+
+      button.addEventListener("click", function() {
+        button.disabled = true;
+      });
+    }
+  </script>
+</body>
+</html>
